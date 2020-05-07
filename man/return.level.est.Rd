@@ -4,7 +4,7 @@
 \alias{return.level.est}
 \title{Return level estimation - Only intended for developer use}
 \usage{
-return.level.est(r, u, sigma_u, xi, lambda_u, theta_gomes)
+return.level.est(r, u, sigma_u, xi, lambda_u, theta)
 }
 \arguments{
 \item{r}{a return period.}
@@ -17,7 +17,7 @@ return.level.est(r, u, sigma_u, xi, lambda_u, theta_gomes)
 
 \item{lambda_u}{a relative frequency of the number of threshold value exceedances.}
 
-\item{theta_gomes}{an extremal index.}
+\item{theta}{an extremal index.}
 }
 \value{
 A numeric value of return lever corresponding to return period \code{r}

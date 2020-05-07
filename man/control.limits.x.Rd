@@ -9,7 +9,13 @@ control.limits.x(x, method = "range", group.size, L)
 \arguments{
 \item{x}{a numeric vector of data values.}
 
-\item{method}{a character string specifying the preferred estimate of standard deviation parameter. Must be \code{"range"} for estimate based on sample ranges or \code{"sd"} for estimate based on sample standard deviations.}
+\item{method}{a character string specifying the preferred estimate of standard deviation parameter.
+
+Possible options are
+\itemize{
+  \item{\code{"range"}} {for estimation based on sample ranges}
+  \item{\code{"sd"}} {for estimation based on sample standard deviations}
+}}
 
 \item{group.size}{a positive integer giving the number of observations in individual segments used for computation of control chart limits.
 If the data can not be equidistantly divided, the first extra values will be excluded from the analysis.}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/extremevalue.R
 \name{extremal.index.gomes}
 \alias{extremal.index.gomes}
-\title{Extremal index estimation - Only intended for developer use}
+\title{Extremal index estimation (Gomes, 1993) - Only intended for developer use}
 \usage{
 extremal.index.gomes(x, block.length)
 }
@@ -12,7 +12,7 @@ extremal.index.gomes(x, block.length)
 \item{block.length}{a numeric value giving the length of blocks.}
 }
 \value{
-A numeric value of an extremal index
+A numeric value of an extremal index estimate
 }
 \description{
 Estimation of an extremal index using the block maxima approach suggested by (Gomes, 1993).

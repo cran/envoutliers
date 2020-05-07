@@ -5,48 +5,114 @@
 \title{Identification of outliers using extreme value theory}
 \usage{
 KRDetect.outliers.EV(x, perform.smoothing = TRUE,
-  bandwidth.type = "local", bandwidth.value = NULL,
-  extremal.index.min = NULL, extremal.index.max = NULL,
-  block.length = round(sqrt(length(na.omit(x)))), threshold.min = NULL,
-  threshold.max = NULL, return.period = 120)
+  bandwidth.type = "local", bandwidth.value = NULL, kernel.order = 2,
+  gpd.fit.method = "mle", threshold.min = NULL, threshold.max = NULL,
+  k.min = round(length(na.omit(x)) * 0.1),
+  k.max = round(length(na.omit(x)) * 0.1), extremal.index.min = NULL,
+  extremal.index.max = NULL, extremal.index.type = "block.maxima",
+  block.length.min = round(sqrt(length(na.omit(x)))),
+  block.length.max = round(sqrt(length(na.omit(x)))), D.min = NULL,
+  D.max = NULL, K.min = NULL, K.max = NULL, r.min = NULL,
+  r.max = NULL, return.period = 120)
 }
 \arguments{
-\item{x}{a numeric vector of observations.}
+\item{x}{data values.
+Supported data types
+\itemize{
+  \item{a numeric vector}
+  \item{a time series object \code{ts}}
+  \item{a time series object \code{xts}}
+  \item{a time series object \code{zoo}}
+}}
 
 \item{perform.smoothing}{a logical value specifying if data smoothing is performed. If \code{TRUE} (default), data are smoothed.}
 
-\item{bandwidth.type}{a character string specifying the type of bandwidth, must be \code{"local"} (default) or \code{"global"}.}
+\item{bandwidth.type}{a character string specifying the type of bandwidth.
+
+Possible options are
+\itemize{
+  \item{\code{"local"}} {(default) to use local bandwidth}
+  \item{\code{"global"}} {to use global bandwidth}
+}}
 
 \item{bandwidth.value}{a local bandwidth array (for \code{bandwidth.type = "local"}) or global bandwidth value (for \code{bandwidth.type = "global"}) for kernel regression estimation. If \code{bandwidth.type = "NULL"} (default) a data-adaptive local plug-in (Herrmann, 1997) (for \code{bandwidth.type = "local"}) or data-adaptive global plug-in (Gasser et al., 1991) (for \code{bandwidth.type = "global"}) bandwidth is used instead.}
 
-\item{extremal.index.min}{a numeric value giving the extremal index for identification of outliers with extremely low value. If \code{extremal.index.min = NULL} (default), estimate of (Gomes, 1993) is used.}
+\item{kernel.order}{a nonnegative integer giving the order of the optimal kernel (Gasser et al., 1985) used for smoothing.
 
-\item{extremal.index.max}{a numeric value giving the extremal index for identification of outliers with extremely high value. If \code{extremal.index.max = NULL} (default), estimate of (Gomes, 1993) is used.}
+Possible options are
+\itemize{
+  \item{\code{kernel.order = 2}} {(default)}
+  \item{\code{kernel.order = 4}}
+}}
 
-\item{block.length}{a numeric value giving the length of blocks for estimation of extremal index. Default is \eqn{round(sqrt(length(na.omit(x))))}.}
+\item{gpd.fit.method}{a character string specifying the method used for the estimate of the scale and shape parameters of GP distribution.
 
-\item{threshold.min}{a threshold value for residuals with low values, that is used to estimate the parameters of Generalized Pareto distribution. If \code{threshold.min = NULL} (default), threshold is estimated as 90\% quantile of smoothing residuals.}
+Possible options are
+\itemize{
+  \item{\code{"mle"}} {(default) for maximum likelihood estimates (Coles, 2001)}
+  \item{\code{"moment"}} {for moment estimates (de Haan and Ferreira2006)}
+}}
 
-\item{threshold.max}{a threshold value for residuals with high values, that is used to estimate the parameters of Generalized Pareto distribution. If \code{threshold.max = NULL} (default), threshold is estimated as 90\% quantile of smoothing residuals.}
+\item{threshold.min}{a threshold value for residuals with low values, that is used to find the maximum likelihood estimates of shape and scale parameters of GP distribution and selected types of extremal index estimates (specifically: Intervals estimator (Ferro and Segers, 2003), censored estimator, (Holesovsky and Fusek, 2020), K-gaps estimator (Suveges and Davison, 2010), runs estimator (Smith and Weissman, 1994)). If \code{threshold.min = NULL} (default), threshold is estimated as 90\% quantile of smoothing residuals.}
+
+\item{threshold.max}{a threshold value for residuals with high values, that is used to find the maximum likelihood estimates of shape and scale parameters of GP distribution and selected types of extremal index estimates (specifically: Intervals estimator (Ferro and Segers, 2003), censored estimator, (Holesovsky and Fusek, 2020), K-gaps estimator (Suveges and Davison, 2010), runs estimator (Smith and Weissman, 1994)). If \code{threshold.max = NULL} (default), threshold is estimated as 90\% quantile of smoothing residuals.}
+
+\item{k.min}{a positive integer for residuals with low values giving the number of largest order statistics used to find the moment estimates (de Haan and Ferreira, 2006) of shape and scale parameters of GP distribution. Default is \code{k.min = round(length(x) * 0.1)}.}
+
+\item{k.max}{a positive integer for residuals with high values giving the number of largest order statistics used to find the moment estimates (de Haan and Ferreira, 2006) of shape and scale parameters of GP distribution. Default is \code{k.max = round(length(x) * 0.1)}.}
+
+\item{extremal.index.min}{a numeric value giving the extremal index for identification of outliers with extremely low value. If \code{extremal.index.min = NULL} (default), the extremal index is estimated using the method specified by the parameter \code{extremal.index.type}.}
+
+\item{extremal.index.max}{a numeric value giving the extremal index for identification of outliers with extremely high value. If \code{extremal.index.max = NULL} (default), the extremal index is estimated using the method specified by the parameter \code{extremal.index.type}.}
+
+\item{extremal.index.type}{a character string specifying the type of extremal index estimate.
+
+Possible options are
+\itemize{
+  \item{\code{"block.maxima"}} {(default) for block maxima estimator (Gomes, 1993).}
+  \item{\code{"intervals"}} {for intervals estimator (Ferro and Segers, 2003).}
+  \item{\code{"censored"}} {for censored estimator (Holesovsky and Fusek, 2020).}
+  \item{\code{"Kgaps"}} {for K-gaps estimator (Suveges and Davison, 2010).}
+  \item{\code{"sliding.blocks"}} {for sliding blocks estimator (Northrop, 2015).}
+  \item{\code{"runs"}} {for runs estimator (Smith and Weissman, 1994).}
+}}
+
+\item{block.length.min}{a numeric value for residuals with low values giving the length of blocks for estimation of extremal index. Only required for \code{extremal.index.type = "block.maxima"} and \code{extremal.index.type = "sliding.blocks"}. Default is \code{block.length.min = round(sqrt(length(x)))}.}
+
+\item{block.length.max}{a numeric value for residuals with high values giving the length of blocks for estimation of extremal index. Only required for \code{extremal.index.type = "block.maxima"} and \code{extremal.index.type = "sliding.blocks"}. Default is \code{block.length.max = round(sqrt(length(x)))}.}
+
+\item{D.min}{a nonnegative integer for residuals with low values giving the value of D parameter used for censored extremal index estimate (Holesovsky and Fusek, 2020). Only required for \code{extremal.index.type = "censored"}.}
+
+\item{D.max}{a nonnegative integer for residuals with high values giving the value of D parameter used for censored extremal index estimate (Holesovsky and Fusek, 2020). Only required for \code{extremal.index.type = "censored"}.}
+
+\item{K.min}{a nonnegative integer for residuals with low values giving the value of K parameter used for K-gaps extremal index estimate (Suveges and Davison, 2010). Only required for \code{extremal.index.type = "Kgaps"}.}
+
+\item{K.max}{a nonnegative integer for residuals with high values giving the value of K parameter used for K-gaps extremal index estimate (Suveges and Davison, 2010). Only required for \code{extremal.index.type = "Kgaps"}.}
+
+\item{r.min}{a positive integer for residuals with low values giving the value of runs parameter of runs extremal index estimate (Smith and Weissman, 1994). Only required for \code{extremal.index.type = "runs"}.}
+
+\item{r.max}{a positive integer for residuals with high values giving the value of runs parameter of runs extremal index estimate (Smith and Weissman, 1994). Only required for \code{extremal.index.type = "runs"}.}
 
 \item{return.period}{a positive numeric value giving return period. Default is \code{r = 120}, which means that observations whose values are exceeded on average once every 120 observations are detected as outliers.}
 }
 \value{
-A list is returned with elements:
+A \code{"KRDetect"} object which contains a list with elements:
 \item{method.type}{a character string giving the type of method used for outlier idetification}
 \item{x}{a numeric vector of observations}
 \item{index}{a numeric vector of index design points assigned to individual observations}
 \item{smoothed}{a numeric vector of estimates of the kernel regression function (smoothed data)}
-\item{sigma_u.min}{a numeric value giving scale parameter of Generalised Pareto distribution used for identification of outliers with extremely low value}
-\item{sigma_u.max}{a numeric value giving scale parameter of Generalised Pareto distribution used for identification of outliers with extremely high value}
+\item{GPD.fit.method}{the method used for the estimate of the scale and shape parameters of GP distribution}
+\item{extremal.index.type}{the type of extremal index estimate used for the identification of outliers}
+\item{sigma.min}{a numeric value giving scale parameter of Generalised Pareto distribution used for identification of outliers with extremely low value}
+\item{sigma.max}{a numeric value giving scale parameter of Generalised Pareto distribution used for identification of outliers with extremely high value}
 \item{xi.min}{a numeric value giving shape parameter of Generalised Pareto distribution used for identification of outliers with extremely low value}
 \item{xi.max}{a numeric value giving shape parameter of Generalised Pareto distribution used for identification of outliers with extremely high value}
-\item{lambda_u.min}{a numeric value giving relative frequency of the number of threshold value exceedances and identification of outliers with extremely low value}
-\item{lambda_u.max}{a numeric value giving relative frequency of the number of threshold value exceedances and identification of outliers with extremely high value}
+\item{lambda_u.min}{a numeric value giving relative frequency of the number of threshold value exceedances and identification of outliers with extremely low value. The value of the parameter is returned only for \code{gpd.fit.method = "mle"}.}
+\item{lambda_u.max}{a numeric value giving relative frequency of the number of threshold value exceedances and identification of outliers with extremely high value. The value of the parameter is returned only for \code{gpd.fit.method = "mle"}.}
 \item{extremal.index.min}{a numeric value giving extremal index used for identification of outliers with extremely low value}
 \item{extremal.index.max}{a numeric value giving extremal index used for identification of outliers with extremely high value}
-\item{threshold.min}{a numeric value giving threshold used in Peaks Over Threshold model and identification of outlier with extremely low value}
-\item{threshold.max}{a numeric value giving threshold used in Peaks Over Threshold model and identification of outlier with extremely high value}
+\item{threshold.min}{a numeric value giving threshold value used for identification of outliers with extremely low value.}
+\item{threshold.max}{a numeric value giving threshold value used for identification of outliers with extremely high value.}
 \item{return.level.min}{a numeric value giving return level used for identification of outliers with extremely low value}
 \item{return.level.max}{a numeric value giving return level used for identification of outliers with extremely high value}
 \item{outlier.min}{a logical vector specyfing the identified outliers with extremely low value. \code{TRUE} means that corresponding observation from vector \code{x} is detected as outlier}
@@ -66,7 +132,10 @@ The outliers with extremely high values are detected as observations whose value
 data("mydata", package = "openair")
 x = mydata$o3[format(mydata$date, "\%m \%Y") == "12 2002"]
 result = KRDetect.outliers.EV(x)
-KRDetect.outliers.plot(result)
+summary(result)
+plot(result)
+plot(result, plot.type = "min")
+plot(result, plot.type = "max")
 }
 \references{
 Holesovsky J, Campulova M, Michalek J (2018). Semiparametric Outlier Detection in Nonstationary Times Series: Case Study for Atmospheric Pollution in Brno, Czech Republic. Atmospheric Pollution Research, 9(1).
@@ -77,11 +146,25 @@ E. Herrmann (1997) Local bandwidth choice in kernel regression estimation. Journ
 
 Herrmann E, Maechler M (2013). lokern: Kernel Regression Smoothing with Local or Global Plug-in Bandwidth. R package version 1.1-5, URL http://CRAN.R-project.org/package=lokern.
 
+Gasser, T, Muller, H-G, Mammitzsch, V (1985). Kernels for nonparametric curve estimation. Journal of the Royal Statistical Society, B Met., 47(2), 238-252.
+
 Gomes M (1993). On the estimation of parameter of rare events in environmental time series. In Statistics for the Environment, volume 2 of Water Related Issues, pp. 225-241. Wiley.
+
+Ferro, CAT, Segers, J (2003). Inference for Cluster of Extreme Values. Journal of Royal Statistical Society, Series B, 65(2), 545-556.
+
+Holesovsky, J, Fusek, M (2020). Estimation of the Extremal Index Using Censored Distributions. Extremes, In Press.
+
+Suveges, M, Davison, AC (2010). Model Misspecification in Peaks Over Threshold Analysis. The Annals of Applied Statistics, 4(1), 203-221.
+
+Northrop, PJ (2015). An Efficient Semiparametric Maxima Estimator of the Extremal Index. Extremes, 18, 585-603.
+
+Smith, RL, Weissman, I (1994). Estimating the Extremal Index. Journal of the Royal Statistical Society, Series B, 56, 515-529.
 
 Heffernan JE, Stephenson AG (2016). ismev: An Introduction to Statistical Modeling of Extreme Values. R package version 1.41, URL http://CRAN.R-project.org/package=ismev.
 
 Coles S (2001). An Introduction to Statistical Modeling of Extreme Values. 3 edition. London: Springer. ISBN 1-85233-459-2.
+
+de Haan, L, Ferreira, A (2006). Extreme Value Theory: An Introduction. Springer.
 
 Pickands J (1975). Statistical inference using extreme order statistics. The Annals of Statistics, 3(1), 119-131.
 }

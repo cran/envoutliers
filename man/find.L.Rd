@@ -11,7 +11,7 @@ find.L(x, L.start = 2.5, eps = NULL)
 
 \item{L.start}{a numeric value giving the smallest reasonable value of parameter \code{L}.}
 
-\item{eps}{A numeric value of the \emph{epsilon} parameter. If \code{eps = NULL} (default), the value is calculated as recommended in Modified Algorithm A1 (Campulova et al., 2018).}
+\item{eps}{A numeric value of the \emph{epsilon} parameter. If \code{eps = NULL}, the value is calculated as recommended in Modified Algorithm A1 (Campulova et al., 2018).}
 }
 \value{
 A numeric value giving the parameter \emph{L}

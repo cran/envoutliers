@@ -39,7 +39,13 @@ get.norm <- function() {
 #' @param x a numeric vector of data values.
 #' @param group.size a positive integer giving the number of observations in individual segments used for computation of control chart limits.
 #' If the data can not be equidistantly divided, the first extra values will be excluded from the analysis.
-#' @param method a character string specifying the preferred estimate of standard deviation parameter. Must be \code{"range"} for estimate based on sample ranges or \code{"sd"} for estimate based on sample standard deviations.
+#' @param method a character string specifying the preferred estimate of standard deviation parameter.
+#'
+#' Possible options are
+#' \itemize{
+#'   \item{\code{"range"}} {for estimation based on sample ranges}
+#'   \item{\code{"sd"}} {for estimation based on sample standard deviations}
+#' }
 #' @param L a positive numeric value giving parameter \code{L} specifying the width of control limits.
 #' @details This function computes parameters based on which control chart \emph{x} can be constructed.
 #' The function is exported for developer use only. It does not perform any checks on inputs since it is only a convenience function for identification limits based on control chart \emph{x}.
@@ -60,6 +66,7 @@ control.limits.x <- function(x,
                              method = "range",
                              group.size,
                              L) {
+  # input data check
   if (!method %in% c("range", "sd")) {
     stop("Invalid method")
   }
@@ -73,7 +80,7 @@ control.limits.x <- function(x,
   }
 
   data = x
-  k = length(data) %/% group.size # k = pocet skupin
+  k = length(data) %/% group.size # groups count
 
   norm = get.norm()
   d2 = norm$d2[norm$k == group.size]
@@ -86,10 +93,10 @@ control.limits.x <- function(x,
     data = data[c((length(data) - k * group.size + 1):length(data))]
   }
 
-  groups = seq(from = 1, to = length(data), by = group.size)   # rozcleneni do skupin
-  groups.mean = c(rep(NA, k))   # prumery ve skupinach - vypocet
-  groups.range = c(rep(NA, k))   # rozpeti ve skupinach - vypocet
-  groups.sd = c(rep(NA, k))   # smerodatna odchylka ve skupinach - vypocet
+  groups = seq(from = 1, to = length(data), by = group.size)
+  groups.mean = c(rep(NA, k))
+  groups.range = c(rep(NA, k))
+  groups.sd = c(rep(NA, k))
 
   for (i in 1:k) {
     group.data = data[(groups[i]):(groups[i] + group.size - 1)]
@@ -100,8 +107,8 @@ control.limits.x <- function(x,
 
   LCL.R = mean(data) - A2 * mean(groups.range)
   UCL.R = mean(data) + A2 * mean(groups.range)
-  LCL.s = mean(data) - A3 * mean(groups.sd)  # Upper control limit pro prumer
-  UCL.s = mean(data) + A3 * mean(groups.sd)  # Lower control limit pro prumer
+  LCL.s = mean(data) - A3 * mean(groups.sd) # upper control limit
+  UCL.s = mean(data) + A3 * mean(groups.sd) # lower control limit
 
   if (method == "range") {
     LCL = LCL.R
@@ -109,6 +116,8 @@ control.limits.x <- function(x,
   } else if (method == "sd") {
     LCL = LCL.s
     UCL = UCL.s
+  } else {
+    stop("Invalid method")
   }
 
   result = list(x = data,
@@ -147,6 +156,7 @@ control.limits.x <- function(x,
 control.limits.s <- function(x,
                              group.size,
                              L) {
+  # input data check
   if (length(which(is.na(x))) > 0) {
     stop("NA values in input data")
   }
@@ -156,7 +166,7 @@ control.limits.s <- function(x,
   }
 
   data = x
-  k = length(data) %/% group.size # k = pocet skupin
+  k = length(data) %/% group.size # groups count
 
   norm = get.norm()
   C4 = norm$C4[norm$k == group.size]
@@ -168,7 +178,7 @@ control.limits.s <- function(x,
     data = data[c((length(data) - k * group.size + 1):length(data))]
   }
 
-  groups = seq(from = (1 + length(data) %% group.size), to = length(data), by = group.size)   # rozcleneni do skupi
+  groups = seq(from = (1 + length(data) %% group.size), to = length(data), by = group.size)
   groups.sd = c(rep(NA, k))
 
   for (i in 1:k) {
@@ -215,6 +225,7 @@ control.limits.s <- function(x,
 control.limits.R <- function(x,
                              group.size,
                              L) {
+  # input data check
   if (length(which(is.na(x))) > 0) {
     stop("NA values in input data")
   }
@@ -224,7 +235,7 @@ control.limits.R <- function(x,
   }
 
   data = x
-  k = length(data) %/% group.size # k = pocet skupin
+  k = length(data) %/% group.size # groups count
 
   norm = get.norm()
   d2 = norm$d2[norm$k == group.size]
@@ -237,7 +248,7 @@ control.limits.R <- function(x,
     data = data[c((length(data) - k * group.size + 1):length(data))]
   }
 
-  groups = seq(from = (1 + length(data) %% group.size), to = length(data), by = group.size)   # rozcleneni do skupi
+  groups = seq(from = (1 + length(data) %% group.size), to = length(data), by = group.size)
   groups.range = c(rep(NA, k))
 
   for (i in 1:k) {
@@ -263,11 +274,37 @@ control.limits.R <- function(x,
 #' Identification of outliers in environmental data using two-step method based on kernel smoothing and control charts (Campulova et al., 2017).
 #' The outliers are identified as observations corresponding to segments of smoothing residuals exceeding control charts limits.
 #'
-#' @param x a numeric vector of data values.
+#' @param x data values.
+#' Supported data types
+#' \itemize{
+#'   \item{a numeric vector}
+#'   \item{a time series object \code{ts}}
+#'   \item{a time series object \code{xts}}
+#'   \item{a time series object \code{zoo}}
+#' }
 #' @param perform.smoothing a logical value specifying if data smoothing is performed. If \code{TRUE} (default), data are smoothed.
-#' @param bandwidth.type a character string specifying the type of bandwidth, must be \code{"local"} (default) or \code{"global"}.
+#' @param bandwidth.type a character string specifying the type of bandwidth.
+#'
+#' Possible options are
+#' \itemize{
+#'   \item{\code{"local"}} {(default) to use local bandwidth}
+#'   \item{\code{"global"}} {to use global bandwidth}
+#' }
 #' @param bandwidth.value a local bandwidth array (for \code{bandwidth.type = "local"}) or global bandwidth value (for \code{bandwidth.type = "global"}) for kernel regression estimation. If \code{bandwidth.type = "NULL"} (default) a data-adaptive local plug-in (Herrmann, 1997) (for \code{bandwidth.type = "local"}) or data-adaptive global plug-in (Gasser et al., 1991) (for \code{bandwidth.type = "global"}) bandwidth is used instead.
-#' @param method a character string specifying the preferred estimate of standard deviation parameter. Must be \code{"range"} (default) for estimate based on sample ranges or \code{"sd"} for estimate based on sample standard deviations. For more information see (Campulova et al., 2017).
+#' @param kernel.order a nonnegative integer giving the order of the optimal kernel (Gasser et al., 1985) used for smoothing.
+#'
+#' Possible options are
+#' \itemize{
+#'   \item{\code{kernel.order = 2}} {(default)}
+#'   \item{\code{kernel.order = 4}}
+#' }
+#' @param method a character string specifying the preferred estimate of standard deviation parameter.
+#'
+#' Possible options are
+#' \itemize{
+#'   \item{\code{"range"}} {(default) for estimation based on sample ranges}
+#'   \item{\code{"sd"}} {for estimation based on sample standard deviations}
+#' }
 #' @param group.size.x a positive integer giving the number of observations in individual segments used for computation of \emph{x} chart control limits.
 #' If the data can not be equidistantly divided, the first extra values will be excluded from the analysis. Default is \code{group.size.x = 3}.
 #' @param group.size.R a positive integer giving the number of observations in individual segments used for computation of \emph{R} chart control limits.
@@ -284,14 +321,14 @@ control.limits.R <- function(x,
 #' Beside that logical vector specyfing the outliers identified based on at least one type of control limits is returned.
 #' Crucial for the method is the choice of paramaters \code{L.x}, \code{L.R} and \code{L.s} specifying the width of control limits.
 #' Different values of the parameters determine different criteria for outlier detection. For more information see (Campulova et al., 2017).
-#' @return A list is returned with elements:
+#' @return A \code{"KRDetect"} object which contains a list with elements:
 #' \item{method.type}{a character string giving the type of method used for outlier idetification}
 #' \item{x}{a numeric vector of observations}
 #' \item{index}{a numeric vector of index design points assigned to individual observations}
 #' \item{smoothed}{a numeric vector of estimates of the kernel regression function (smoothed data)}
 #' \item{outlier.x}{a logical vector specyfing the identified outliers based on limits of control chart \emph{x}, \code{TRUE} means that corresponding observation from vector \code{x} is detected as outlier}
-#' \item{outlier.R}{a logical vector specyfing the identified outliers based on limits of control chart \emph{R}, \code{TRUE means} that corresponding observation from vector \code{x} is detected as outlier}
-#' \item{outlier.s}{a logical vector specyfing the identified outliers based on limits of control chart \emph{s}, \code{TRUE means} that corresponding observation from vector \code{x} is detected as outlier}
+#' \item{outlier.R}{a logical vector specyfing the identified outliers based on limits of control chart \emph{R}, \code{TRUE} means that corresponding observation from vector \code{x} is detected as outlier}
+#' \item{outlier.s}{a logical vector specyfing the identified outliers based on limits of control chart \emph{s}, \code{TRUE} means that corresponding observation from vector \code{x} is detected as outlier}
 #' \item{outlier}{a logical vector specyfing the identified outliers based on at least one type of control limits. \code{TRUE} means that corresponding observation from vector \code{x} is detected as outlier}
 #' \item{LCL.x}{a numeric value giving lower control limit of control chart \emph{x}}
 #' \item{UCL.x}{a numeric value giving upper control limit of control chart \emph{x}}
@@ -317,7 +354,11 @@ control.limits.R <- function(x,
 #' @examples data("mydata", package = "openair")
 #' x = mydata$o3[format(mydata$date, "%m %Y") == "12 2002"]
 #' result = KRDetect.outliers.controlchart(x)
-#' KRDetect.outliers.plot(result)
+#' summary(result)
+#' plot(result)
+#' plot(result, plot.type = "x")
+#' plot(result, plot.type = "R")
+#' plot(result, plot.type = "s")
 #' @importFrom lokern glkerns lokerns
 #' @importFrom stats na.omit
 #' @export
@@ -325,6 +366,7 @@ KRDetect.outliers.controlchart <- function(x,
                                            perform.smoothing = TRUE,
                                            bandwidth.type = "local",
                                            bandwidth.value = NULL,
+                                           kernel.order = 2,
                                            method = "range",
                                            group.size.x = 3,
                                            group.size.R = 3,
@@ -332,6 +374,19 @@ KRDetect.outliers.controlchart <- function(x,
                                            L.x = 3,
                                            L.R = 3,
                                            L.s = 3) {
+  # input data check
+  if (any(c("ts", "zoo", "xts") %in% class(x))) {
+    x = as.numeric(x)
+  }
+
+  if (!bandwidth.type %in% c("local", "global")) {
+    stop("Invalid bandwidth type")
+  }
+
+  if (!kernel.order %in% c(2, 4)) {
+    stop("Invalid kernel order.")
+  }
+
   if (!method %in% c("range", "sd")) {
     stop("Invalid method")
   }
@@ -351,7 +406,7 @@ KRDetect.outliers.controlchart <- function(x,
   data$smoothed = NA
 
   if (perform.smoothing) {
-    data$smoothed = smoothing(data$index, data$x, bandwidth.type, bandwidth.value)
+    data$smoothed = smoothing(data$index, data$x, bandwidth.type, bandwidth.value, kernel.order)$data.smoothed
     data$residuals = data$x - data$smoothed
   } else {
     data$residuals = data$x
@@ -391,8 +446,9 @@ KRDetect.outliers.controlchart <- function(x,
   data$outlier.s[data$s.groups.sd < s$LCL | data$s.groups.sd > s$UCL] = TRUE
   data$outlier = data$outlier.x | data$outlier.R | data$outlier.s
   data.output = merge(data.input, data, by = c("index", "x"), all.x = TRUE)
+  data.output = data.output[order(data.output$index),]
 
-  result = list(method.type = "controlchart",
+  result = list(method.type = "control chart",
                 x = data.output$x,
                 index = data.output$index,
                 smoothed = data.output$smoothed,
@@ -406,6 +462,8 @@ KRDetect.outliers.controlchart <- function(x,
                 UCL.s = s$UCL,
                 LCL.R = R$LCL,
                 UCL.R = R$UCL)
+
+  class(result) = "KRDetect"
 
   return(result)
 }

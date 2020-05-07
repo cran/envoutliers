@@ -215,7 +215,7 @@ grubbs.test <- function(x,
 #'
 #' @param x a numeric vector of data values.
 #' @param L.start a numeric value giving the smallest reasonable value of parameter \code{L}.
-#' @param eps A numeric value of the \emph{epsilon} parameter. If \code{eps = NULL} (default), the value is calculated as recommended in Modified Algorithm A1 (Campulova et al., 2018).
+#' @param eps A numeric value of the \emph{epsilon} parameter. If \code{eps = NULL}, the value is calculated as recommended in Modified Algorithm A1 (Campulova et al., 2018).
 #' @details This function finds the value of parameter L defining the criterion for outlier identification using Chebyshev inequality. The algorithm is based on Algorithm A1 described in (Campulova et al., 2018).
 #' Nonoutliers are characterised as a homogeneous set of data randomly distributed around zero value.
 #' The differences between the data correspond to random fluctuations in the measurements.
@@ -336,8 +336,13 @@ find.alpha <- function(x,
 #' The function is called by \code{\link{KRDetect.outliers.changepoint}} and is not intended for use by regular users of the package.
 #'
 #' @param x a numeric vector of data values.
-#' @param cp.analysis.type a character string specifying the type of changepoint analysis, must be \code{"parametric"} or \code{"nonparametric"}.
-#' If \code{cp.analysis.type = "parametric"}, changepoint analysis is performed using PELT algorithm (Killick et al., 2012), otherwise A Nonparametric Approach for Multiple Changepoins (Matteson and James, 2014) is used.
+#' @param cp.analysis.type a character string specifying the type of changepoint analysis
+#'
+#' Possible options are
+#' \itemize{
+#'   \item{\code{"parametric"}} {to perform changepoint analysis using PELT algorithm (Killick et al., 2012)}
+#'   \item{\code{"nonparametric"}} {to perform a nonparametric approach for multiple changepoins (Matteson and James, 2014)}
+#' }
 #' @param pen.value A character string giving the formula for manual penalty used in PELT algorithm.
 #' Only required for \code{cp.analysis.type = "parametric"}.
 #' @param alpha.edivisive a numeric value giving the moment index used for determining the distance between and within segments in the nonparametric changepoint model.
@@ -361,24 +366,27 @@ changepoint <- function(x,
                         alpha.edivisive) {
   if (cp.analysis.type == "parametric"){
     model = cpt.var(x, method = "PELT", penalty = "Manual", pen.value = pen.value)
-    cp.segment = c(NA, length(x))  # cp.index will contains index of segment corresponding to individual data
+    cp.segment = c(NA, length(x)) # cp.index will contains index of segment corresponding to individual data
 
-    if (length(cpts(model)) > 0) {  # if some changepoints are detected
+    if (length(cpts(model)) > 0) { # if some changepoints are detected
       segments = c(1, cpts(model)) # assigning detected change points
 
-      for (i in 1:(length(segments) - 1)) {   # changepoint indexes are in vector segments
+      for (i in 1:(length(segments) - 1)) { # changepoint indexes are in vector segments
         segment.length = segments[i + 1] - segments[i] # n.segments contains length of j-th segment in concrete day
-        cp.segment[segments[i]:segments[i + 1] - 1] = i  # assignment to cp.index column
+        cp.segment[segments[i]:segments[i + 1] - 1] = i # assignment to cp.index column
       }
 
-      cp.segment[segments[length(segments)]:length(x)[1]] = i + 1  # assignment to cp.index column for the last segment
-    } else {       # if no changepoint are detected cp.index contains only 1
+      cp.segment[segments[length(segments)]:length(x)[1]] = i + 1 # assignment to cp.index column for the last segment
+    } else { # if no changepoint are detected cp.index contains only 1
       cp.segment = 1
       segments = 1
     }
   } else if(cp.analysis.type == "nonparametric") {
     cp.segment = e.divisive(as.matrix(x, ncol = 1), min.size = 60, alpha = alpha.edivisive)$cluster
+  } else {
+    stop ("Invalid changepoint analysis type")
   }
+
   result = list(x = x,
                 cp.segment = cp.segment)
 
@@ -505,7 +513,7 @@ chebyshev.inequality.detect <- function(x, cp.segment, L.default) {
 #' Analogous, the first segment can be merged with the second one.
 #' @param segment.length.for.merge a numeric value giving giving minimal required number of observations on segments for performing the homogeneity test within changepoint split control.
 #' A segment with fewer data than \code{segment.length.for.merge} is merged with the previous one without testing the homogeneity of variances (the first segment is merged with the second one).
-#' @details #' Control of data splitting into segments.
+#' @details Control of data splitting into segments.
 #' If a segment contains less than a given number of observations specified by the user and the variances of data on the segment and the previous one are equally based on the robust version of Levene's test, the segment is merged with previous one.
 #' Analogous, the first segment can be merged with the second one.
 #' The user can also specify a minimum length of a segment for performing the homogeneity test. A segment with fewer data than this minimal length is merged with the previous one without testing the homogeneity of variances.
@@ -522,7 +530,7 @@ segment.length.control <- function(index, x, cp.segment, min.segment.length, seg
     if (length(x[cp.segment == i]) < min.segment.length) {
       levene.test.p.value = as.data.frame(leveneTest(lm(x[(cp.segment == (i - 1) | cp.segment == i)] ~ as.factor(cp.segment[(cp.segment == (i - 1) | cp.segment == i)])), location = "median"))$`Pr(>F)`[1]
       if (levene.test.p.value > 0.05 | length(x[cp.segment == i]) < segment.length.for.merge) {
-        begin = min(index[cp.segment == i])
+        begin = min(which(cp.segment == i))
         cp.segment[begin:length(x)] = cp.segment[begin:length(x)] - 1
         i = i - 1
       }
@@ -536,7 +544,7 @@ segment.length.control <- function(index, x, cp.segment, min.segment.length, seg
     levene.test.p.value = as.data.frame(leveneTest(lm(x[(cp.segment == 1 | cp.segment == 2)] ~ as.factor(cp.segment[(cp.segment == 1 | cp.segment == 2)])), location = "median"))$`Pr(>F)`[1]
 
     if (levene.test.p.value > 0.05 | length(x[cp.segment == 1]) < segment.length.for.merge) {
-      begin = min(index[cp.segment == 2])
+      begin = min(which(cp.segment == 2))
       cp.segment[begin:length(x)] = cp.segment[begin:length(x)] - 1
     }
   }
@@ -548,25 +556,58 @@ segment.length.control <- function(index, x, cp.segment, min.segment.length, seg
 #'
 #' Identification of outliers in environmental data using method based on kernel smoothing, changepoint analysis of smoothing residuals and subsequent analysis of residuals on homogeneous segments (Campulova et al., 2018).
 #'
-#' @param x a numeric vector of observations.
+#' @param x data values.
+#' Supported data types
+#' \itemize{
+#'   \item{a numeric vector}
+#'   \item{a time series object \code{ts}}
+#'   \item{a time series object \code{xts}}
+#'   \item{a time series object \code{zoo}}
+#' }
 #' @param perform.smoothing a logical value specifying if data smoothing is performed. If \code{TRUE} (default), data are smoothed.
 #' @param perform.cp.analysis a logical value specifying if changepoint analysis is performed. If \code{TRUE} (default), smoothing residuals are partitioned into homogeneous segments.
-#' @param bandwidth.type a character string specifying the type of bandwidth, must be \code{"local"} (default) or \code{"global"}.
+#' @param bandwidth.type a character string specifying the type of bandwidth.
+#'
+#' Possible options are
+#' \itemize{
+#'   \item{\code{"local"}} {(default) to use local bandwidth}
+#'   \item{\code{"global"}} {to use global bandwidth}
+#' }
 #' @param bandwidth.value a local bandwidth array (for \code{bandwidth.type = "local"}) or global bandwidth value (for \code{bandwidth.type = "global"}) for kernel regression estimation. If \code{bandwidth.type = "NULL"} (default) a data-adaptive local plug-in (Herrmann, 1997) (for \code{bandwidth.type = "local"}) or data-adaptive global plug-in (Gasser et al., 1991) (for \code{bandwidth.type = "global"}) bandwidth is used instead.
-#' @param cp.analysis.type a character string specifying the type of changepoint analysis, must be \code{"parametric"} or \code{"nonparametric"} (default).
-#' If \code{cp.analysis.type = "parametric"}, changepoint analysis is performed using PELT algorithm (Killick et al., 2012), otherwise A Nonparametric Approach for Multiple Changepoins (Matteson and James, 2014) is used.
+#' @param kernel.order a nonnegative integer giving the order of the optimal kernel (Gasser et al., 1985) used for smoothing.
+#'
+#' Possible options are
+#' \itemize{
+#'   \item{\code{kernel.order = 2}} {(default)}
+#'   \item{\code{kernel.order = 4}}
+#' }
+#' @param cp.analysis.type a character string specifying the type of changepoint analysis.
+#'
+#' Possible options are
+#' \itemize{
+#'   \item{\code{"parametric"}} {(default) to perform changepoint analysis using PELT algorithm (Killick et al., 2012)}
+#'   \item{\code{"nonparametric"}} {to perform a nonparametric approach for multiple changepoins (Matteson and James, 2014)}
+#' }
 #' @param pen.value a character string giving the formula for manual penalty used in PELT algorithm.
 #' Only required for \code{cp.analysis.type = "parametric"}. Default is \code{pen.value = "5*log(n)"}.
 #' @param alpha.edivisive a numeric value giving the moment index used for determining the distance between and within segments in nonparametric changepoint model. Default is \code{alpha.edivisive = 0.3}.
 #' @param min.segment.length a numeric value giving minimal required number of observations on segments from changepoint analysis.
 #' If a segment contains less than \code{min.segment.length} observations and the variances of data on the segment and the previous one are supposed to be equal (based on Levene´s test (Fox, 2016) for homogeneity of variances), the segment is merged with previous one.
 #' Analogous, the first segment can be merged with the second one. Default is \code{min.segment.length = 30}.
-#' @param segment.length.for.merge a numeric value giving giving minimal required number of observations on segments for performing the homogeneity test within changepoint split control.
-#' A segment with less data than \code{segment.length.for.merge} is merged with the previous one without testing the homogeneity of variances (the first segment is merged with the second one). Default is \code{segment.length.for.merge = 15}.
-#' @param method a character string specifying the method for identification of outlier residuals. Must be one of \code{"auto"} (automatic selection based on the structure of the residuals), \code{"grubbs.test"} (Grubbs test), \code{"normal.distribution"} (quantiles of normal distribution) or \code{"chebyshev.inequality"} (chebyshev inequality). Default is \code{method = "auto"}.
+#' @param segment.length.for.merge a numeric value giving minimal required number of observations on segments for performing the homogeneity test within changepoint split control.
+#' A segment with less data than \code{segment.length.for.merge} is merged with the previous one without testing the homogeneity of variances (the first segment is merged with the second one). Default is \code{min.segment.length.for.merge = 15}.
+#' @param method a character string specifying the method for identification of outlier residuals.
+#'
+#' Possible options are
+#' \itemize{
+#'   \item{\code{"auto"}} {(default) for automatic selection based on the structure of the residuals}
+#'   \item{\code{"grubbs.test"}} {for Grubbs test}
+#'   \item{\code{"normal.distribution"}} {for quantiles of normal distribution}
+#'   \item{\code{"chebyshev.inequality"}} {for chebyshev inequality}
+#' }
 #' @param prefer.grubbs a logical variable specyfing if Grubbs test for identification of outlier residuals is preferred to quantiles of normal distribution.
 #' \code{TRUE} (default) means that Grubbs test is preferred. Only required for \code{method = "auto"}.
-#' @param alpha.default a numeric value from interval (0,1) of alpha parameter determining the criterion for (residual) outlier detection:
+#' @param alpha.default a numeric value from interval (0,1) of \emph{alpha} parameter determining the criterion for (residual) outlier detection:
 #' the limits for outlier residuals on individual segments are set as \eqn{+/- (alpha/2-quantile of normal distribution with parameters corresponding to residuals on studied segment) * (sample standard deviation of residuals on corresponding segment)}.
 #' If \code{alpha.default = NULL} (default), its value on individual segments is estimated using Modified Algorithm A1 (Campulova et al., 2018).
 #' @param L.default a numeric value of \emph{L} parameter determining the criterion for outlier (residual) detection:
@@ -576,7 +617,7 @@ segment.length.control <- function(index, x, cp.segment, min.segment.length, seg
 #' Three different approaches (Grubbs test, quantiles of normal distribution, Chebyshev inequality), that can be selected automatically based on data structure or specified by the user, can be used to detect outlier residuals.
 #' Crucial for the method is the choice of parameters alpha and \emph{L} for quantiles of normal distribution and Chebyshev inequality approach, that define the criterion for outlier detection. These values can be specified by the user
 #' or estimated automatically using data driven algorithms (Campulova et al., 2018).
-#' @return A list is returned with elements:
+#' @return A \code{"KRDetect"} object which contains a list with elements:
 #' \item{method.type}{a character string giving the type of method used for outlier idetification}
 #' \item{x}{a numeric vector of observations}
 #' \item{index}{a numeric vector of index design points assigned to individual observations}
@@ -617,7 +658,9 @@ segment.length.control <- function(index, x, cp.segment, min.segment.length, seg
 #' @examples data("mydata", package = "openair")
 #' x = mydata$o3[format(mydata$date, "%m %Y") == "12 2002"]
 #' result = KRDetect.outliers.changepoint(x)
-#' KRDetect.outliers.plot(result)
+#' summary(result)
+#' plot(result)
+#' plot(result, show.segments = FALSE)
 #' @importFrom changepoint cpt.var cpts
 #' @importFrom ecp e.divisive
 #' @importFrom lokern glkerns lokerns
@@ -628,6 +671,7 @@ KRDetect.outliers.changepoint <- function(x,
                                           perform.cp.analysis = TRUE,
                                           bandwidth.type = "local",
                                           bandwidth.value = NULL,
+                                          kernel.order = 2,
                                           cp.analysis.type = "parametric",
                                           pen.value = "5*log(n)",
                                           alpha.edivisive = 0.3,
@@ -637,22 +681,28 @@ KRDetect.outliers.changepoint <- function(x,
                                           prefer.grubbs = TRUE,
                                           alpha.default = NULL,
                                           L.default = NULL) {
-  # -------------------------------------------
-  # Input data control and parameter settings
-  # -------------------------------------------
+  # input data check
+  if (any(c("ts", "zoo", "xts") %in% class(x))) {
+    x = as.numeric(x)
+  }
 
   if (!bandwidth.type %in% c("local", "global")) {
     stop("Invalid bandwidth type")
+  }
+
+  if (!kernel.order %in% c(2, 4)) {
+    stop("Invalid kernel order")
+  }
+
+  if (!cp.analysis.type %in% c("parametric", "nonparametric")) {
+    stop("Invalid changepoint analysis method")
   }
 
   if (!method %in% c("auto", "grubbs.test", "normal.distribution", "chebyshev.inequality")) {
     stop("Invalid method")
   }
 
-  if (!cp.analysis.type %in% c("parametric", "nonparametric")) {
-    stop("Invalid method")
-  }
-
+  # parameter settings
   normality.residuals = FALSE
   normality.residuals.transformed = FALSE
   normality.test.residuals.results = NULL
@@ -665,21 +715,17 @@ KRDetect.outliers.changepoint <- function(x,
     stop("Not enough data")
   }
 
-  # -------------------------------------------
-  # Data smoothing
-  # -------------------------------------------
+  # data smoothing
   data$smoothed = NA
 
   if (perform.smoothing) {
-    data$smoothed = smoothing(data$index, data$x, bandwidth.type, bandwidth.value)
+    data$smoothed = smoothing(data$index, data$x, bandwidth.type, bandwidth.value, kernel.order)$data.smoothed
     data$residuals = data$x - data$smoothed
   } else {
     data$residuals = data$x
   }
 
-  # ----------------------------------
-  # Changepoint analysis
-  # ----------------------------------
+  # changepoint analysis
   if (perform.cp.analysis) {
     data$cp.segment = changepoint(data$residuals, cp.analysis.type, pen.value, alpha.edivisive)$cp.segment
 
@@ -697,9 +743,7 @@ KRDetect.outliers.changepoint <- function(x,
     }
   }
 
-  # ------------------------------------------------------------
-  # Test of residual normality
-  # ------------------------------------------------------------
+  # test of residual normality
   normality.test.residuals.results = data.frame(segment = NA, crit.left = NA, crit.right = NA, test.stat = NA, normality = NA)
 
   for (i in 1:max(data$cp.segment)) {
@@ -719,9 +763,8 @@ KRDetect.outliers.changepoint <- function(x,
   if (length(which(normality.test.residuals.results$normality == "not rejected")) == dim(normality.test.residuals.results)[1]) {
     normality.residuals = TRUE
   }
-  #-----------------------------------------------
+
   # Box Cox transform
-  #-----------------------------------------------
   if (!normality.residuals) {
     data$residuals.transformed = NA
 
@@ -730,9 +773,7 @@ KRDetect.outliers.changepoint <- function(x,
     }
   }
 
-  # ------------------------------------------------------------
-  # Test of transformed residuals normality
-  # ------------------------------------------------------------
+  # test of transformed residuals normality
   if (!normality.residuals) {
     normality.test.residuals.transformed.results = data.frame(segment = NA, crit.left = NA, crit.right = NA, test.stat = NA, normality = NA)
 
@@ -755,9 +796,7 @@ KRDetect.outliers.changepoint <- function(x,
   }
 
 
-  # ----------------------------------------------------------------------------------------
-  # Outlier detection using Grubbs test
-  # ----------------------------------------------------------------------------------------
+  # outlier detection using Grubbs test
   if ((method == "auto" & (normality.residuals | normality.residuals.transformed) & prefer.grubbs) | method == "grubbs.test") {
 
     detection.method = "Grubbs test"
@@ -768,9 +807,7 @@ KRDetect.outliers.changepoint <- function(x,
     }
   }
 
-  # ----------------------------------------------------------------------------------------
-  # Outlier detection using quantiles of normal distribution
-  # ----------------------------------------------------------------------------------------
+  # outlier detection using quantiles of normal distribution
   if ((method == "auto" & (normality.residuals | normality.residuals.transformed) & !prefer.grubbs) | method == "normal.distribution") {
 
     detection.method = "normal distribution"
@@ -779,9 +816,7 @@ KRDetect.outliers.changepoint <- function(x,
       temp = normal.distr.quantiles.detect(data$residuals, data$cp.segment, alpha.default)
       data$outlier = temp$outlier
       alpha = temp$alpha
-
     } else {
-
       temp = normal.distr.quantiles.detect(data$residuals.transformed, data$cp.segment, alpha.default)
       data$outlier = temp$outlier
       alpha = temp$alpha
@@ -790,9 +825,7 @@ KRDetect.outliers.changepoint <- function(x,
     alpha = alpha.default
   }
 
-  # ----------------------------------------------------------
-  # Outlier detection using Chebyshev inequality
-  # ----------------------------------------------------------
+  # outlier detection using Chebyshev inequality
   if ((method == "auto" & (!normality.residuals & !normality.residuals.transformed)) | method == "chebyshev.inequality") {
     detection.method = "Chebyshev inequality"
     temp = chebyshev.inequality.detect(data$residuals, data$cp.segment, L.default)
@@ -802,19 +835,20 @@ KRDetect.outliers.changepoint <- function(x,
   } else {
     L = L.default
   }
-  #---------------------
-  # Results
-  #---------------------
+
+  # results
   if (normality.residuals) {
     normality.residuals.transformed = NULL
   }
 
   data.output = merge(data.input, data, by = c("index", "x"), all.x = TRUE)
+  data.output = data.output[order(data.output$index),]
   normality.results = list(normality.residuals = normality.residuals,
                            normality.residuals.transformed = normality.residuals.transformed,
                            normality.test.residuals.results = normality.test.residuals.results,
                            normality.test.residuals.transformed.results = normality.test.residuals.transformed.results)
-  result = list(method.type = "changepoint",
+
+  result = list(method.type = "changepoint analysis",
                 x = data.output$x,
                 index = data.output$index,
                 smoothed = data.output$smoothed,
@@ -824,6 +858,8 @@ KRDetect.outliers.changepoint <- function(x,
                 alpha = alpha,
                 L = L,
                 outlier = data.output$outlier)
+
+  class(result) = "KRDetect"
 
   return(result)
 }

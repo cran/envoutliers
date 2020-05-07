@@ -5,20 +5,47 @@
 \title{Identification of outliers using control charts}
 \usage{
 KRDetect.outliers.controlchart(x, perform.smoothing = TRUE,
-  bandwidth.type = "local", bandwidth.value = NULL, method = "range",
-  group.size.x = 3, group.size.R = 3, group.size.s = 3, L.x = 3,
-  L.R = 3, L.s = 3)
+  bandwidth.type = "local", bandwidth.value = NULL, kernel.order = 2,
+  method = "range", group.size.x = 3, group.size.R = 3,
+  group.size.s = 3, L.x = 3, L.R = 3, L.s = 3)
 }
 \arguments{
-\item{x}{a numeric vector of data values.}
+\item{x}{data values.
+Supported data types
+\itemize{
+  \item{a numeric vector}
+  \item{a time series object \code{ts}}
+  \item{a time series object \code{xts}}
+  \item{a time series object \code{zoo}}
+}}
 
 \item{perform.smoothing}{a logical value specifying if data smoothing is performed. If \code{TRUE} (default), data are smoothed.}
 
-\item{bandwidth.type}{a character string specifying the type of bandwidth, must be \code{"local"} (default) or \code{"global"}.}
+\item{bandwidth.type}{a character string specifying the type of bandwidth.
+
+Possible options are
+\itemize{
+  \item{\code{"local"}} {(default) to use local bandwidth}
+  \item{\code{"global"}} {to use global bandwidth}
+}}
 
 \item{bandwidth.value}{a local bandwidth array (for \code{bandwidth.type = "local"}) or global bandwidth value (for \code{bandwidth.type = "global"}) for kernel regression estimation. If \code{bandwidth.type = "NULL"} (default) a data-adaptive local plug-in (Herrmann, 1997) (for \code{bandwidth.type = "local"}) or data-adaptive global plug-in (Gasser et al., 1991) (for \code{bandwidth.type = "global"}) bandwidth is used instead.}
 
-\item{method}{a character string specifying the preferred estimate of standard deviation parameter. Must be \code{"range"} (default) for estimate based on sample ranges or \code{"sd"} for estimate based on sample standard deviations. For more information see (Campulova et al., 2017).}
+\item{kernel.order}{a nonnegative integer giving the order of the optimal kernel (Gasser et al., 1985) used for smoothing.
+
+Possible options are
+\itemize{
+  \item{\code{kernel.order = 2}} {(default)}
+  \item{\code{kernel.order = 4}}
+}}
+
+\item{method}{a character string specifying the preferred estimate of standard deviation parameter.
+
+Possible options are
+\itemize{
+  \item{\code{"range"}} {(default) for estimation based on sample ranges}
+  \item{\code{"sd"}} {for estimation based on sample standard deviations}
+}}
 
 \item{group.size.x}{a positive integer giving the number of observations in individual segments used for computation of \emph{x} chart control limits.
 If the data can not be equidistantly divided, the first extra values will be excluded from the analysis. Default is \code{group.size.x = 3}.}
@@ -36,14 +63,14 @@ If the data can not be equidistantly divided, the first extra values will be exc
 \item{L.s}{a positive numeric value giving parameter \code{L} specifying the width of \emph{s} chart control limits. Default is \code{L.s = 3}.}
 }
 \value{
-A list is returned with elements:
+A \code{"KRDetect"} object which contains a list with elements:
 \item{method.type}{a character string giving the type of method used for outlier idetification}
 \item{x}{a numeric vector of observations}
 \item{index}{a numeric vector of index design points assigned to individual observations}
 \item{smoothed}{a numeric vector of estimates of the kernel regression function (smoothed data)}
 \item{outlier.x}{a logical vector specyfing the identified outliers based on limits of control chart \emph{x}, \code{TRUE} means that corresponding observation from vector \code{x} is detected as outlier}
-\item{outlier.R}{a logical vector specyfing the identified outliers based on limits of control chart \emph{R}, \code{TRUE means} that corresponding observation from vector \code{x} is detected as outlier}
-\item{outlier.s}{a logical vector specyfing the identified outliers based on limits of control chart \emph{s}, \code{TRUE means} that corresponding observation from vector \code{x} is detected as outlier}
+\item{outlier.R}{a logical vector specyfing the identified outliers based on limits of control chart \emph{R}, \code{TRUE} means that corresponding observation from vector \code{x} is detected as outlier}
+\item{outlier.s}{a logical vector specyfing the identified outliers based on limits of control chart \emph{s}, \code{TRUE} means that corresponding observation from vector \code{x} is detected as outlier}
 \item{outlier}{a logical vector specyfing the identified outliers based on at least one type of control limits. \code{TRUE} means that corresponding observation from vector \code{x} is detected as outlier}
 \item{LCL.x}{a numeric value giving lower control limit of control chart \emph{x}}
 \item{UCL.x}{a numeric value giving upper control limit of control chart \emph{x}}
@@ -69,7 +96,11 @@ Different values of the parameters determine different criteria for outlier dete
 data("mydata", package = "openair")
 x = mydata$o3[format(mydata$date, "\%m \%Y") == "12 2002"]
 result = KRDetect.outliers.controlchart(x)
-KRDetect.outliers.plot(result)
+summary(result)
+plot(result)
+plot(result, plot.type = "x")
+plot(result, plot.type = "R")
+plot(result, plot.type = "s")
 }
 \references{
 Campulova M, Veselik P, Michalek J (2017). Control chart and Six sigma based algorithms for identification of outliers in experimental data, with an application to particulate matter PM10. Atmospheric Pollution Research. Doi=10.1016/j.apr.2017.01.004.

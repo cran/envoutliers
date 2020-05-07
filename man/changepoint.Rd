@@ -9,8 +9,13 @@ changepoint(x, cp.analysis.type, pen.value, alpha.edivisive)
 \arguments{
 \item{x}{a numeric vector of data values.}
 
-\item{cp.analysis.type}{a character string specifying the type of changepoint analysis, must be \code{"parametric"} or \code{"nonparametric"}.
-If \code{cp.analysis.type = "parametric"}, changepoint analysis is performed using PELT algorithm (Killick et al., 2012), otherwise A Nonparametric Approach for Multiple Changepoins (Matteson and James, 2014) is used.}
+\item{cp.analysis.type}{a character string specifying the type of changepoint analysis
+
+Possible options are
+\itemize{
+  \item{\code{"parametric"}} {to perform changepoint analysis using PELT algorithm (Killick et al., 2012)}
+  \item{\code{"nonparametric"}} {to perform a nonparametric approach for multiple changepoins (Matteson and James, 2014)}
+}}
 
 \item{pen.value}{A character string giving the formula for manual penalty used in PELT algorithm.
 Only required for \code{cp.analysis.type = "parametric"}.}

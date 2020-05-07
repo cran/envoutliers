@@ -6,25 +6,51 @@
 \usage{
 KRDetect.outliers.changepoint(x, perform.smoothing = TRUE,
   perform.cp.analysis = TRUE, bandwidth.type = "local",
-  bandwidth.value = NULL, cp.analysis.type = "parametric",
-  pen.value = "5*log(n)", alpha.edivisive = 0.3,
-  min.segment.length = 30, segment.length.for.merge = 15,
-  method = "auto", prefer.grubbs = TRUE, alpha.default = NULL,
-  L.default = NULL)
+  bandwidth.value = NULL, kernel.order = 2,
+  cp.analysis.type = "parametric", pen.value = "5*log(n)",
+  alpha.edivisive = 0.3, min.segment.length = 30,
+  segment.length.for.merge = 15, method = "auto",
+  prefer.grubbs = TRUE, alpha.default = NULL, L.default = NULL)
 }
 \arguments{
-\item{x}{a numeric vector of observations.}
+\item{x}{data values.
+Supported data types
+\itemize{
+  \item{a numeric vector}
+  \item{a time series object \code{ts}}
+  \item{a time series object \code{xts}}
+  \item{a time series object \code{zoo}}
+}}
 
 \item{perform.smoothing}{a logical value specifying if data smoothing is performed. If \code{TRUE} (default), data are smoothed.}
 
 \item{perform.cp.analysis}{a logical value specifying if changepoint analysis is performed. If \code{TRUE} (default), smoothing residuals are partitioned into homogeneous segments.}
 
-\item{bandwidth.type}{a character string specifying the type of bandwidth, must be \code{"local"} (default) or \code{"global"}.}
+\item{bandwidth.type}{a character string specifying the type of bandwidth.
+
+Possible options are
+\itemize{
+  \item{\code{"local"}} {(default) to use local bandwidth}
+  \item{\code{"global"}} {to use global bandwidth}
+}}
 
 \item{bandwidth.value}{a local bandwidth array (for \code{bandwidth.type = "local"}) or global bandwidth value (for \code{bandwidth.type = "global"}) for kernel regression estimation. If \code{bandwidth.type = "NULL"} (default) a data-adaptive local plug-in (Herrmann, 1997) (for \code{bandwidth.type = "local"}) or data-adaptive global plug-in (Gasser et al., 1991) (for \code{bandwidth.type = "global"}) bandwidth is used instead.}
 
-\item{cp.analysis.type}{a character string specifying the type of changepoint analysis, must be \code{"parametric"} or \code{"nonparametric"} (default).
-If \code{cp.analysis.type = "parametric"}, changepoint analysis is performed using PELT algorithm (Killick et al., 2012), otherwise A Nonparametric Approach for Multiple Changepoins (Matteson and James, 2014) is used.}
+\item{kernel.order}{a nonnegative integer giving the order of the optimal kernel (Gasser et al., 1985) used for smoothing.
+
+Possible options are
+\itemize{
+  \item{\code{kernel.order = 2}} {(default)}
+  \item{\code{kernel.order = 4}}
+}}
+
+\item{cp.analysis.type}{a character string specifying the type of changepoint analysis.
+
+Possible options are
+\itemize{
+  \item{\code{"parametric"}} {(default) to perform changepoint analysis using PELT algorithm (Killick et al., 2012)}
+  \item{\code{"nonparametric"}} {to perform a nonparametric approach for multiple changepoins (Matteson and James, 2014)}
+}}
 
 \item{pen.value}{a character string giving the formula for manual penalty used in PELT algorithm.
 Only required for \code{cp.analysis.type = "parametric"}. Default is \code{pen.value = "5*log(n)"}.}
@@ -35,15 +61,23 @@ Only required for \code{cp.analysis.type = "parametric"}. Default is \code{pen.v
 If a segment contains less than \code{min.segment.length} observations and the variances of data on the segment and the previous one are supposed to be equal (based on Levene´s test (Fox, 2016) for homogeneity of variances), the segment is merged with previous one.
 Analogous, the first segment can be merged with the second one. Default is \code{min.segment.length = 30}.}
 
-\item{segment.length.for.merge}{a numeric value giving giving minimal required number of observations on segments for performing the homogeneity test within changepoint split control.
-A segment with less data than \code{segment.length.for.merge} is merged with the previous one without testing the homogeneity of variances (the first segment is merged with the second one). Default is \code{segment.length.for.merge = 15}.}
+\item{segment.length.for.merge}{a numeric value giving minimal required number of observations on segments for performing the homogeneity test within changepoint split control.
+A segment with less data than \code{segment.length.for.merge} is merged with the previous one without testing the homogeneity of variances (the first segment is merged with the second one). Default is \code{min.segment.length.for.merge = 15}.}
 
-\item{method}{a character string specifying the method for identification of outlier residuals. Must be one of \code{"auto"} (automatic selection based on the structure of the residuals), \code{"grubbs.test"} (Grubbs test), \code{"normal.distribution"} (quantiles of normal distribution) or \code{"chebyshev.inequality"} (chebyshev inequality). Default is \code{method = "auto"}.}
+\item{method}{a character string specifying the method for identification of outlier residuals.
+
+Possible options are
+\itemize{
+  \item{\code{"auto"}} {(default) for automatic selection based on the structure of the residuals}
+  \item{\code{"grubbs.test"}} {for Grubbs test}
+  \item{\code{"normal.distribution"}} {for quantiles of normal distribution}
+  \item{\code{"chebyshev.inequality"}} {for chebyshev inequality}
+}}
 
 \item{prefer.grubbs}{a logical variable specyfing if Grubbs test for identification of outlier residuals is preferred to quantiles of normal distribution.
 \code{TRUE} (default) means that Grubbs test is preferred. Only required for \code{method = "auto"}.}
 
-\item{alpha.default}{a numeric value from interval (0,1) of alpha parameter determining the criterion for (residual) outlier detection:
+\item{alpha.default}{a numeric value from interval (0,1) of \emph{alpha} parameter determining the criterion for (residual) outlier detection:
 the limits for outlier residuals on individual segments are set as \eqn{+/- (alpha/2-quantile of normal distribution with parameters corresponding to residuals on studied segment) * (sample standard deviation of residuals on corresponding segment)}.
 If \code{alpha.default = NULL} (default), its value on individual segments is estimated using Modified Algorithm A1 (Campulova et al., 2018).}
 
@@ -52,7 +86,7 @@ the limits for outlier residuals on individual segments are set as \eqn{+/- L * 
 If \code{L.default = NULL} (default), its value on individual segments is estimated using Algorithm A1 (Campulova et al., 2018).}
 }
 \value{
-A list is returned with elements:
+A \code{"KRDetect"} object which contains a list with elements:
 \item{method.type}{a character string giving the type of method used for outlier idetification}
 \item{x}{a numeric vector of observations}
 \item{index}{a numeric vector of index design points assigned to individual observations}
@@ -77,7 +111,9 @@ or estimated automatically using data driven algorithms (Campulova et al., 2018)
 data("mydata", package = "openair")
 x = mydata$o3[format(mydata$date, "\%m \%Y") == "12 2002"]
 result = KRDetect.outliers.changepoint(x)
-KRDetect.outliers.plot(result)
+summary(result)
+plot(result)
+plot(result, show.segments = FALSE)
 }
 \references{
 Campulova M, Michalek J, Mikuska P, Bokal D (2018). Nonparametric algorithm for identification of outliers in environmental data. Journal of Chemometrics, 32, 453-463.

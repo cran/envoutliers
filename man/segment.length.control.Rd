@@ -30,7 +30,7 @@ In case a number of data values on a segment is too small, the segment is (under
 merged with the previous one. The first segment can be merged with the previous one.
 }
 \details{
-#' Control of data splitting into segments.
+Control of data splitting into segments.
 If a segment contains less than a given number of observations specified by the user and the variances of data on the segment and the previous one are equally based on the robust version of Levene's test, the segment is merged with previous one.
 Analogous, the first segment can be merged with the second one.
 The user can also specify a minimum length of a segment for performing the homogeneity test. A segment with fewer data than this minimal length is merged with the previous one without testing the homogeneity of variances.

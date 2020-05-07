@@ -2,34 +2,65 @@
 % Please edit documentation in R/generalFunctions.R
 \name{smoothing}
 \alias{smoothing}
-\title{Kernel regression smoothing - Only intended for developer use}
+\title{Kernel regression smoothing}
 \usage{
-smoothing(x, y, bandwidth.type, bandwidth.value)
+smoothing(x = c(1:length(y)), y, bandwidth.type = "local",
+  bandwidth.value = NULL, kernel.order = 2)
 }
 \arguments{
-\item{x}{a numeric vector of design points.}
+\item{x}{data values.
+Supported data types
+\itemize{
+  \item{a numeric vector}
+  \item{a time series object \code{ts}}
+  \item{a time series object \code{xts}}
+  \item{a time series object \code{zoo}}
+}}
 
-\item{y}{a numeric vector of data values of the same length as \code{x}.}
+\item{y}{a numeric vector of data values.}
 
-\item{bandwidth.type}{a character string specifying the type of bandwidth, must be \code{"local"} or \code{"global"}.}
+\item{bandwidth.type}{a character string specifying the type of bandwidth.
 
-\item{bandwidth.value}{a local bandwidth array (for \code{bandwidth.type = "local"}) or global bandwidth value (for \code{bandwidth.type = "global"}) for kernel regression estimation. If \code{bandwidth.type = "NULL"} (default) a data-adaptive local plug-in (Herrmann, 1997) (for \code{bandwidth.type = "local"}) or data-adaptive global plug-in (Gasser et al., 1991) (for \code{bandwidth.type = "global"}) bandwidth is used instead.}
+Possible options are
+\itemize{
+  \item{\code{"local"}} {(default) to use local bandwidth}
+  \item{\code{"global"}} {to use global bandwidth}
+}}
+
+\item{bandwidth.value}{a local bandwidth array (for \code{bandwidth.type = "local"}) or global bandwidth value (for \code{bandwidth.type = "global"}) for kernel regression estimation. If \code{bandwidth.type = "NULL"} (default), a data-adaptive local plug-in (Herrmann, 1997) (for \code{bandwidth.type = "local"}) or data-adaptive global plug-in (Gasser et al., 1991) (for \code{bandwidth.type = "global"}) bandwidth is used instead.}
+
+\item{kernel.order}{a nonnegative integer giving the order of the optimal kernel (Gasser et al., 1985) used for smoothing.
+
+Possible options are
+\itemize{
+  \item{\code{kernel.order = 2}} {(default)}
+  \item{\code{kernel.order = 4}}
+}}
 }
 \value{
-A numeric vector of estimates of the kernel regression function (smoothed data).
+A list is returned with elements:
+\item{data.smoothed}{a numeric vector of estimates of the kernel regression function (smoothed data).}
+\item{residuals}{a numeric vector of smoothing residuals}
 }
 \description{
-Nonparametric estimation of regression function using kernel regression with local or global data-adaptive plug-in bandwidth.
-The function is called by \code{\link{KRDetect.outliers.changepoint}}, \code{\link{KRDetect.outliers.controlchart}} and \code{\link{KRDetect.outliers.EV}}. This function is not intended for use by regular users of the package.
+Nonparametric estimation of regression function using kernel regression with local or global data-adaptive plug-in bandwidth and optimal kernels.
 }
 \details{
-This function computes the estimate of kernel regression function using a local or global data-adaptive plug-in algorithm.
-The function is exported for developer use only. It does not perform any checks on inputs since it is only convenience function for computing estimates of the kernel regression function using functions implemented in package \pkg{lokern}.
+This function computes the estimate of kernel regression function using a local or global data-adaptive plug-in algorithm and optimal kernels (Gasser et al., 1985).
+}
+\examples{
+data("mydata", package = "openair")
+x = mydata$o3[format(mydata$date, "\%m \%Y") == "12 2002"]
+smoothed = smoothing(y = x)
+smoothed$data.smoothed
+smoothed$residuals
 }
 \references{
-Gasser T, Kneip A, Kohler W (1991). A flexible and fast method for automatic smoothing. Journal of the American Statistical Association, 86, 643–652.
+Gasser T, Kneip A, Kohler W (1991). A flexible and fast method for automatic smoothing. Journal of the American Statistical Association, 86, 643-652.
 
-Herrmann E (1997). Local bandwidth choice in kernel regression estimation. Journal of Computational and Graphical Statistics, 6(1), 35–54.
+Herrmann E (1997). Local bandwidth choice in kernel regression estimation. Journal of Computational and Graphical Statistics, 6(1), 35-54.
+
+Gasser, T, Müller, H-G, Mammitzsch, V (1985). Kernels for nonparametric curve estimation. Journal of the Royal Statistical Society, B Met., 47(2), 238-252.
 
 Eva Herrmann; Packaged for R and enhanced by Martin Maechler (2016). lokern: Kernel Regression Smoothing with Local or Global Plug-in Bandwidth. R package version 1.1-8. https://CRAN.R-project.org/package=lokern
 }
